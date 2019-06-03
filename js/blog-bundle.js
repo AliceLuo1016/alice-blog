@@ -33,6 +33,7 @@ var blogs = [];
 var keyword;
 var mode;
 var error;
+var defaultImage = './posts/default.jpg';
 
 // jQuery main execution function
 $(function(){
@@ -83,7 +84,7 @@ function init_page(){
 
 // function to find all the blog posts
 function search_blog() {
-	var files = ["2019_05_31_my_first_blog_post.html","default.jpg"];
+	var files = ["2019_01_23_sample_post.html","2019_05_21_sample_post.html","2019_05_21_sample_post.jpg","2019_05_23_sample_post.html","2019_05_23_sample_post.jpg","2019_12_01_sample_post.html","default.jpg"];
 
 	for(var i in files) {
    		if(path.extname(files[i]) === ".html") {
@@ -269,10 +270,6 @@ window.on_page_number = function(pageNum){
 /**************************************** tage logic  ****************************************************/
 window.on_tag = function(tag){
 	window.location.href = "./index.html?tag="+tag;
-}
-
-window.on_tag_post = function(tag){
-	window.location.href = "../index.html?tag="+tag;
 }
 
 /**************************************** search logic  ****************************************************/

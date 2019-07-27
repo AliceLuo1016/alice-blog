@@ -1,6 +1,7 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 // Author: Maxwell Li
 // Date: 2019.05.28
+// This is the source file
 // To load this file into html, run "watchify -t brfs js/blog-post.js -o js/blog-bundle.js"
 
 
@@ -33,7 +34,6 @@ var blogs = [];
 var keyword;
 var mode;
 var error;
-var defaultImage = './posts/default.jpg';
 
 // jQuery main execution function
 $(function(){
@@ -61,6 +61,10 @@ function init_page(){
 		console.log(mode)
 		mode = MODE.INDEX;
 	}
+	// change %20 to space
+	if (keyword){
+		keyword = keyword.replace("%20"," ");
+	}
 	console.log("tag is " + keyword);
 
 	// initialize error message flag to be true
@@ -84,11 +88,12 @@ function init_page(){
 
 // function to find all the blog posts
 function search_blog() {
-	var files = ["2019_01_23_sample_post.html","2019_05_21_sample_post.html","2019_05_21_sample_post.jpg","2019_05_23_sample_post.html","2019_05_23_sample_post.jpg","2019_12_01_sample_post.html","default.jpg"];
+	var files = ["2019_01_23_sample_post","2019_05_21_sample_post","2019_05_23_sample_post","2019_12_01_sample_post","default.jpg"];
 
 	for(var i in files) {
-   		if(path.extname(files[i]) === ".html") {
-   			blogs.push(files[i]);
+		if(path.extname(files[i]) === "") {
+   			blogs.push(files[i] + "/post.html");
+   			console.log(files[i] + "/post.html")
    		}
    	}
 
@@ -116,7 +121,8 @@ function setup_page(){
 		}
 		// load up to blogPerPage blogs (not if the maximum number of blogs have reached)
 		for (i = index; i < iterationLength; i++){
-			parse_html("./posts/"+blogs[i],i);
+			document.getElementById('card-list-placeholder').innerHTML += '<div class="card mb-4" id="post_'+i.toString()+'"></div>';
+			parse_html("./posts/"+blogs[i],i); // parse html
 		}
 	}
 }
@@ -175,41 +181,39 @@ function load_card(content,file,i) {
 	parser = new DOMParser();
 	htmlDoc = parser.parseFromString(content,"text/html");
 
-	if (mode == MODE.INDEX || (mode == MODE.TAG && htmlDoc.getElementById("tag").childNodes[0].innerText == keyword) || (mode == MODE.SEARCH && htmlDoc.body.textContent.match(RegExp(keyword,"gi"))) ){ // we are in index page or keyword matches, show
-		if (error){ // clear error message
-			error = false;
-			document.getElementById('card-list-placeholder').innerText = '';
-		}
-		var image = file.replace("html","jpg");
+	card = document.getElementById('post_'+i.toString())
+
+	if (mode == MODE.INDEX || check_tag(mode,keyword) ||  check_search(mode,keyword)){ // we are in index page or keyword matches, show
+		var image = file.replace("post.html","cover.jpg");
 		var date = file.slice(8,18);
 		date = date.split("_");
 
-		// add card object to card list
-		document.getElementById('card-list-placeholder').innerHTML += '<div class="card mb-4" id="post_'+i.toString()+'"></div>';
 		// add image
-		document.getElementById('post_'+i.toString()).innerHTML += '<img class="card-img-top" src="'+
-																	image+
-																	'" alt="Card image cap"/>'; //http://placehold.it/750x300
+		card.innerHTML += '<img class="card-img-top" src="'+
+						image+
+						'" alt="Card image cap"/>'; //http://placehold.it/750x300
 		// add title
-		document.getElementById('post_'+i.toString()).innerHTML += '<div class="card-body">'+
-																   	'<h2 class="card-title" align-items-center>'+
-																	htmlDoc.getElementById("title").childNodes[0].nodeValue+
-																	'</h2>';
+		card.innerHTML += '<div class="card-body">'+
+					   	'<h2 class="card-title" align-items-center>'+
+						htmlDoc.getElementById("title").childNodes[0].nodeValue+
+						'</h2>';
 		// // add subheading
 		// document.getElementById('post_'+i.toString()).innerHTML += '<p class="card-text">'+
 		// 															htmlDoc.getElementById("subheading").childNodes[0].nodeValue+
 		// 															'</p>';
 
 		// add hyperlink
-		document.getElementById('post_'+i.toString()).innerHTML += '<a href="'+
-																	file+
-																	'" class="btn btn-primary">Read More &rarr;</a>'+
-																	'</div>';
+		card.innerHTML += '<a href="'+
+						file+
+						'" class="btn btn-primary">Read More &rarr;</a>'+
+						'</div>';
 		// add date and tag
-		var tagString = "'"+htmlDoc.getElementById("tag").childNodes[0].innerText+"'"
-		document.getElementById('post_'+i.toString()).innerHTML += '<div class="card-footer text-muted">Posted on '+month.get(date[1])+" "+date[2]+", "+date[0]+
-																	'  <kbd id="tag"><a href="javascript:on_tag('+tagString+')">'+
-																	htmlDoc.getElementById("tag").childNodes[0].innerText+'</a></kbd>';
+		var tagString = "'"+
+						htmlDoc.getElementById("tag").childNodes[0].innerText+
+						"'"
+		card.innerHTML += '<div class="card-footer text-muted">Posted on '+month.get(date[1])+" "+date[2]+", "+date[0]+
+						'  <kbd id="tag"><a href="javascript:on_tag('+tagString+')">'+
+						htmlDoc.getElementById("tag").childNodes[0].innerText+'</a></kbd>';
 
 		// in case an image doesnt exist, use default
 		$(".card-img-top").on("error", function(){
@@ -217,10 +221,16 @@ function load_card(content,file,i) {
 	    });
 	}
 	else{
-		if (error){ // show error message
-			document.getElementById('card-list-placeholder').innerText = 'There is no blog :(';
-		}
+		card.parentNode.removeChild(card)
 	}
+}
+
+function check_tag(mode, keyword){
+	return (mode == MODE.TAG && htmlDoc.getElementById("tag").childNodes[0].innerText == keyword)
+}
+
+function check_search(mode, keyword){
+	return (mode == MODE.SEARCH && htmlDoc.body.textContent.match(RegExp(keyword,"gi")))
 }
 
 /**************************************** pagination logic ****************************************************/
@@ -270,6 +280,10 @@ window.on_page_number = function(pageNum){
 /**************************************** tage logic  ****************************************************/
 window.on_tag = function(tag){
 	window.location.href = "./index.html?tag="+tag;
+}
+
+window.on_tag_post = function(tag){
+	window.location.href = "../../index.html?tag="+tag;
 }
 
 /**************************************** search logic  ****************************************************/
